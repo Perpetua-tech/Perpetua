@@ -1,7 +1,7 @@
 # Perpetua - Blockchain-Based Voting and Token Governance Platform
 
 <div align="center">
-  <img src="docs/assets/perpetua_logo.png" alt="Perpetua Logo" width="250">
+  <img src="https://avatars.githubusercontent.com/u/167041929" alt="Perpetua Logo" width="250">
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
   [![Website](https://img.shields.io/badge/Website-Perpetua.ltd-blue)](https://Perpetua.ltd)
