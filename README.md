@@ -200,7 +200,7 @@ sequenceDiagram
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/Perpetua.git
+git clone https://github.com/Perpetua-tech/Perpetua.git
 cd Perpetua
 
 # Install dependencies
