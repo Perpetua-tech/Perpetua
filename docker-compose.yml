@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:4000/api
+      - REACT_APP_SOLANA_NETWORK=devnet
+    depends_on:
+      - backend
+    networks:
+      - perpetua-network
+
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/perpetua
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=dev_jwt_secret
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - perpetua-network
+
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=perpetua
+    networks:
+      - perpetua-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - perpetua-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@perpetua.ltd
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    depends_on:
+      - postgres
+    networks:
+      - perpetua-network
+
+networks:
+  perpetua-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data: 

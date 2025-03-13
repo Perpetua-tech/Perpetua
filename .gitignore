@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+.pnp
+.pnp.js
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build folders
+dist/
+build/
+out/
+coverage/
+.next/
+.cache/
+
+# Rust / Anchor
+target/
+**/*.rs.bk
+Cargo.lock
+.anchor/
+
+# Solana
+.crates/
+test-ledger/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+.DS_Store
+
+# misc
+.cache/
+.history/
+*.tsbuildinfo
+.turbo
+
+# Hardhat files
+artifacts/
+typechain/
+typechain-types/
+cache/
+solidity-files-cache.json
+
+# Testing
+coverage/
+coverage.json
+
+# Generated files
+generated/
+auto-generated/ 

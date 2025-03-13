@@ -1,0 +1,263 @@
+// Prisma database model definition
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// User model
+model User {
+  id                String      @id @default(uuid())
+  email             String      @unique
+  name              String
+  password          String
+  role              Role        @default(USER)
+  referralCode      String?     @unique
+  referrerId        String?
+  referrer          User?       @relation("UserReferrals", fields: [referrerId], references: [id])
+  referrals         User[]      @relation("UserReferrals")
+  investments       Investment[]
+  transactions      Transaction[]
+  earnings          Earning[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  createdProposals  GovernanceProposal[]
+  votes             GovernanceVote[]
+  comments          ProposalComment[]
+  tokenBalance      Float       @default(0)
+  walletAddress     String?     @unique
+  tokenLocks        TokenLock[]
+  delegationsFrom   VotingPowerDelegation[] @relation("DelegationFrom")
+  delegationsTo     VotingPowerDelegation[] @relation("DelegationTo")
+
+  @@map("users")
+}
+
+// Asset model
+model Asset {
+  id              String   @id @default(uuid())
+  name            String
+  type            String   // villa, coffee, solar, etc.
+  location        String
+  description     String   
+  totalValue      Float
+  availableAmount Float
+  minInvestment   Float
+  expectedReturn  Float
+  duration        Int      // Investment duration (months)
+  imageUrl        String?
+  risk            String   // low, medium, high
+  status          String   @default("active") // active, inactive, completed
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  investments     Investment[]   // Asset investments
+  performances    Performance[]  // Asset performance metrics
+}
+
+// Investment model
+model Investment {
+  id        String   @id @default(uuid())
+  amount    Float
+  status    String   @default("active") // active, completed, redeemed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userId    String
+  assetId   String
+  user      User      @relation(fields: [userId], references: [id])
+  asset     Asset     @relation(fields: [assetId], references: [id])
+  earnings  Earning[] // Investment earnings
+}
+
+// Earning model
+model Earning {
+  id        String   @id @default(uuid())
+  amount    Float
+  date      DateTime @default(now())
+  status    String   @default("pending") // pending, paid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  investmentId String
+  investment   Investment @relation(fields: [investmentId], references: [id])
+}
+
+// Referral model
+model Referral {
+  id         String   @id @default(uuid())
+  code       String   @unique
+  status     String   @default("active") // active, used
+  appliedAt  DateTime? // Applied date
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  referrerId String
+  refereeId  String?  @unique
+  referrer   User     @relation("UserReferrals", fields: [referrerId], references: [id])
+  referee    User?    @relation("ReferredUser", fields: [refereeId], references: [id])
+  rewards    Reward[] // Rewards generated from referral
+}
+
+// Reward model
+model Reward {
+  id        String   @id @default(uuid())
+  amount    Float
+  type      String   // signup, investment, etc.
+  status    String   @default("pending") // pending, paid
+  paidAt    DateTime? // Payment date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userId     String
+  referralId String?
+  user       User      @relation(fields: [userId], references: [id])
+  referral   Referral? @relation(fields: [referralId], references: [id])
+}
+
+// Asset performance metrics
+model Performance {
+  id        String   @id @default(uuid())
+  date      DateTime
+  value     Float
+  growth    Float
+  yield     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id])
+}
+
+// Transaction record
+model Transaction {
+  id        String   @id @default(uuid())
+  type      String   // deposit, withdraw, invest, redeem, etc.
+  amount    Float
+  status    String   @default("pending") // pending, completed, failed
+  txHash    String?  // Blockchain transaction hash
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// Governance models
+model GovernanceProposal {
+  id          String            @id @default(uuid())
+  title       String
+  description String            @db.Text
+  creatorId   String
+  creator     User              @relation(fields: [creatorId], references: [id])
+  endDate     DateTime
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  options     GovernanceOption[]
+  votes       GovernanceVote[]
+  category    String?           // 提案分类
+  tags        String?           // 以逗号分隔的标签列表
+  comments    ProposalComment[]
+
+  @@map("governance_proposals")
+}
+
+model GovernanceOption {
+  id          String            @id @default(uuid())
+  text        String
+  voteCount   Int               @default(0)
+  proposalId  String
+  proposal    GovernanceProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  votes       GovernanceVote[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@map("governance_options")
+}
+
+model GovernanceVote {
+  id                    String            @id @default(uuid())
+  userId                String
+  user                  User              @relation(fields: [userId], references: [id])
+  proposalId            String
+  proposal              GovernanceProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  optionId              String
+  option                GovernanceOption  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  votingPower           Int
+  // 区块链交易记录
+  transactionSignature  String?           // 链上交易签名
+  isOnChain             Boolean           @default(false)
+  createdAt             DateTime          @default(now())
+
+  @@unique([userId, proposalId])
+  @@map("governance_votes")
+}
+
+// 提案评论模型
+model ProposalComment {
+  id          String            @id @default(uuid())
+  content     String            @db.Text
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  // 关系
+  userId      String
+  user        User              @relation(fields: [userId], references: [id])
+  proposalId  String
+  proposal    GovernanceProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  
+  // 回复关系(自引用)
+  parentId    String?
+  parent      ProposalComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies     ProposalComment[] @relation("CommentReplies")
+  
+  // 点赞数
+  likesCount  Int               @default(0)
+  
+  @@map("proposal_comments")
+}
+
+// 添加TokenLock模型
+model TokenLock {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  amount      Float
+  lockDate    DateTime  @default(now())
+  unlockDate  DateTime
+  status      String    @default("LOCKED") // LOCKED, UNLOCKED, CANCELLED
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("token_locks")
+}
+
+// 添加投票权委托模型
+model VotingPowerDelegation {
+  id          String    @id @default(uuid())
+  fromUserId  String
+  fromUser    User      @relation("DelegationFrom", fields: [fromUserId], references: [id])
+  toUserId    String
+  toUser      User      @relation("DelegationTo", fields: [toUserId], references: [id])
+  amount      Float
+  expiryDate  DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("voting_power_delegations")
+}
+
+enum Role {
+  USER
+  ADMIN
+} 
